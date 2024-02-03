@@ -1,4 +1,29 @@
+# def run(video, temp_video='test.mp4', max_frame=1000000, do_plot=False):
+#     base_name = os.path.basename(video.full_filename())
+#     base_name = os.path.splitext(base_name)[0]
+#     fps, _ = video.get_size()
+#     fps = int(numpy.round(fps))
+#     box = get_box(video)
+#     video.set_frame_index(0)
+#     trace = extract_led(video,temp_video , box, max_frame=max_frame)
+#     trace = numpy.array(trace)
+#     trace = (trace > numpy.mean(trace)) * 1
+#     wav_file = os.path.join(Settings.led_folder, base_name + '.wav')
+#     write_wav(trace, wav_file, fps)
+#     if do_plot:
+#         pyplot.figure()
+#         pyplot.plot(trace)
+#         pyplot.show()
+#     return trace
 
+
+
+
+
+
+
+
+----------
 def get_parameters(capture):
     fps = capture.get(cv2.CAP_PROP_FPS)
     total_number_of_frames = int(capture.get(cv2.CAP_PROP_FRAME_COUNT))

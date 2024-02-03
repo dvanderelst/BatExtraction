@@ -1,41 +1,32 @@
 import os
-from Library import Settings
+import numpy
+import cv2
+from tqdm import tqdm
 from matplotlib import pyplot
 from scipy.io.wavfile import write
 from matplotlib.widgets import RectangleSelector
-import numpy
-import cv2
+from Library import Video
 
 
-def run(video, temp_video='test.mp4', max_frame=1000000, do_plot=False):
-    base_name = os.path.basename(video.full_filename())
-    base_name = os.path.splitext(base_name)[0]
-    fps, _ = video.get_size()
-    fps = int(numpy.round(fps))
-    frame = video.get_frame(frame_index=0)
-    selector = BoxSelector(frame)
-    box = selector.get_selected_box()
-    box = numpy.array([box[0][0], box[0][1], box[1][0], box[1][1]])
-    box = numpy.round(box)
-    video.set_frame_index(0)
-    trace = extract_led(video,temp_video , box, max_frame=max_frame)
-    trace = numpy.array(trace)
-    trace = (trace > numpy.mean(trace)) * 1
-    wav_file = os.path.join(Settings.led_folder, base_name + '.wav')
-    write_wav(trace, wav_file, fps)
-    if do_plot:
-        pyplot.figure()
-        pyplot.plot(trace)
-        pyplot.show()
-    return trace
+def extract_led_multiple(ch_files, box, video_folder, max_frame, temp_video=False):
+    traces = []
+    counter = 0
+    for ch_file in ch_files:
+        print('File', counter + 1, 'of', len(ch_files))
+        if counter > 0: temp_video = False
+        video = Video.Video(video_folder, ch_file)
+        trace = extract_led(video, box, max_frame=max_frame, temp_video=temp_video)
+        counter += 1
+        traces.append(trace)
+    traces = numpy.concatenate(traces)
+    return traces
 
-def write_wav(trace, filename, rate):
-    trace = trace.astype(numpy.int16) * 32767
-    write(filename, rate, trace)
 
-def extract_led(video, output_video_path, bounding_box, max_frame):
+def extract_led(video, bounding_box, max_frame, temp_video=False):
+    print(video.full_filename())
     capture = video.capture
-    total_number_of_frames = int(capture.get(cv2.CAP_PROP_FRAME_COUNT))
+    fps, total_number_of_frames = video.get_size()
+    fps = int(numpy.round(fps))
 
     x1, y1, x2, y2 = bounding_box
     x1 = int(x1)
@@ -45,34 +36,53 @@ def extract_led(video, output_video_path, bounding_box, max_frame):
     width = x2 - x1
     height = y2 - y1
 
-    fourcc = cv2.VideoWriter_fourcc(*'MP4V')
-    out = cv2.VideoWriter(output_video_path, fourcc, capture.get(cv2.CAP_PROP_FPS), (int(width), int(height)))
+    fourcc = cv2.VideoWriter_fourcc(*'mp4v')
+    size = (int(width), int(height))
+    if temp_video: out = cv2.VideoWriter(temp_video, fourcc, fps, size)
 
     intensities = []
     previous_frame = None
-    for i in range(total_number_of_frames):
-        print(i, total_number_of_frames)
+    for i in tqdm(range(total_number_of_frames)):
         ret, frame = capture.read()
         if frame is None: frame = previous_frame * 1
-
         cropped_frame = frame[y1:y2, x1:x2]
         grey = cv2.cvtColor(cropped_frame, cv2.COLOR_BGR2GRAY)
         average_intensity = cv2.mean(grey)[0]
         intensities.append(average_intensity)
-        out.write(cropped_frame)
+        if temp_video: out.write(cropped_frame)
         previous_frame = frame * 1
-        if i > max_frame: break
-    out.release()
-    return intensities
+        if i == max_frame: break
+
+    if temp_video: out.release()
+    trace = numpy.array(intensities)
+    trace = (trace > numpy.mean(trace)) * 1
+
+    return trace
+
+
+def get_box(video, title=None):
+    frame = video.get_frame(frame_index=0)
+    selector = BoxSelector(frame, title)
+    box = selector.get_selected_box()
+    box = numpy.array([box[0][0], box[0][1], box[1][0], box[1][1]])
+    box = numpy.round(box)
+    return box
+
+
+def write_wav(trace, filename, rate):
+    trace = trace.astype(numpy.int16) * 32767
+    write(filename, rate, trace)
 
 
 class BoxSelector:
-    def __init__(self, image):
+    def __init__(self, image, title):
         self.image = image
+        self.title = title
         self.start_point = None
         self.end_point = None
         self.fig, self.ax = pyplot.subplots()
         self.ax.imshow(self.image)
+        self.ax.set_title(self.title)
         self.toggle_selector = RectangleSelector(self.ax, self.line_select_callback,
                                                  drawtype='box', useblit=True,
                                                  button=[1], minspanx=5, minspany=5,
