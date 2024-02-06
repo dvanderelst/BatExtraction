@@ -32,10 +32,10 @@ first_ch2_video = Video.Video(video_folder=video_folder, filename=first_ch2)
 first_ch3_video = Video.Video(video_folder=video_folder, filename=first_ch3)
 first_ch4_video = Video.Video(video_folder=video_folder, filename=first_ch4)
 
-box_ch1 = ExtractLed.get_box(first_ch1_video, title='Channel 1')
-box_ch2 = ExtractLed.get_box(first_ch2_video, title='Channel 2')
-box_ch3 = ExtractLed.get_box(first_ch3_video, title='Channel 3')
-box_ch4 = ExtractLed.get_box(first_ch4_video, title='Channel 4')
+box_ch1 = ExtractLed.draw_box(first_ch1_video, title='Channel 1')
+box_ch2 = ExtractLed.draw_box(first_ch2_video, title='Channel 2')
+box_ch3 = ExtractLed.draw_box(first_ch3_video, title='Channel 3')
+box_ch4 = ExtractLed.draw_box(first_ch4_video, title='Channel 4')
 
 ## CHANNEL 1
 if 1 in channels:

@@ -7,7 +7,7 @@ from skimage.measure import regionprops, label
 def motion_analysis(video, start_frame=None, end_frame=None, steps=10):
     threshold = 2
     sigma = 3
-    time_stamp = Extract.get_time_stamp(video)
+    time_stamp = Extract.parse_filename(video)
     capture = Video.Video(video)
     fps, nr_frames = capture.get_size()
     if start_frame is None: start_frame = 1

@@ -17,9 +17,28 @@
 #     return trace
 
 
+def find_best_alignment(signal1, signal2):
+    max_len = max(len(signal1), len(signal2))
+    signal1_padded = numpy.pad(signal1, (0, max_len - len(signal1)))
+    signal2_padded = numpy.pad(signal2, (0, max_len - len(signal2)))
+    # Calculate the cross-correlation
+    cross_corr = numpy.correlate(signal1_padded, signal2_padded, mode='full')
+    # Find the index of the maximum correlation
+    shift = numpy.argmax(cross_corr) - (max_len - 1)
+    return shift
 
-
-
+def extract_led_multiple(ch_files, box, video_folder, max_frame, temp_video=False):
+    traces = []
+    counter = 0
+    for ch_file in ch_files:
+        print('File', counter + 1, 'of', len(ch_files))
+        if counter > 0: temp_video = False
+        video = Video.Video(video_folder, ch_file)
+        trace = extract_led(video, box, max_frame=max_frame, temp_video=temp_video)
+        counter += 1
+        traces.append(trace)
+    traces = numpy.concatenate(traces)
+    return traces
 
 
 
