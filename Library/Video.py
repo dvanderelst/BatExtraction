@@ -3,6 +3,20 @@ import cv2
 import numpy
 import re
 
+def test_mp4_file(file_path):
+    cap = cv2.VideoCapture(file_path)
+    if not cap.isOpened():
+        cap.release()
+        return False
+    cap.release()
+    return True
+    # successful_frames = 0
+    # while True:
+    #     ret, frame = cap.read()
+    #     if ret: successful_frames += 1
+    # cap.release()
+    # return successful_frames
+
 
 class Video:
     def __init__(self, filename):
