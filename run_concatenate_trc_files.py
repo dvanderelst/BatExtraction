@@ -1,12 +1,13 @@
 from Library import ExtractLed
 from Library import Utils
+from matplotlib import pyplot
 import os
 
 # PARAMETERS
 drive = "/media/dieter/Panama_2024"
-video_folder = 'Video_Mmicrotis_search_data/N883A6/2024-2-2'
-output_folder = 'output'
-window = 500
+video_folder = 'downloaded_data/2024-2-19'
+output_folder = 'output2'
+window = 50
 ############
 
 output_folder = os.path.join(drive, output_folder)
@@ -21,7 +22,7 @@ for trc, cam in zip(trc_files, cam_files):
     output_file = os.path.join(output_folder, 'trace_channel_%s.pck' % channel)
     print(output_file)
     trace, fps, indices = ExtractLed.concatenate_traces(trc)
-    trace = ExtractLed.post_process_trace(trace, window=window, do_plot=True)
+    trace = ExtractLed.post_process_trace(trace, window=window, do_plot=False)
 
     result = {}
     result['trace'] = trace
@@ -32,3 +33,7 @@ for trc, cam in zip(trc_files, cam_files):
     result['fps'] = int(fps) #This copies the fps of the last partial trace file in to the results
     Utils.save_to_pickle(result, output_file)
     channel = channel + 1
+
+    pyplot.figure()
+    pyplot.plot(trace)
+    pyplot.show()

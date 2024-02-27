@@ -30,7 +30,7 @@ def post_process_trace(trace, do_plot=False, window=250, led_video=False, output
     std_running_std = numpy.std(running_std)
     constants = (running_std <= std_running_std) * 1.0
 
-    final = 1.0 * (difference > 0)
+    final = difference + 0.5 #1.0 * (difference > 0)
     final[outliers > 0] = numpy.nan
     final[constants > 0] = numpy.nan
     final = numpy.nan_to_num(final, nan=0.5)

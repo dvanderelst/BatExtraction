@@ -5,8 +5,25 @@ import shutil
 import pickle
 import numpy
 from scipy.io import loadmat
+from scipy.interpolate import interp1d
+from scipy.signal import resample
 
+# def downsample_signal(signal, original_rate, new_rate):
+#     resampling_ratio = new_rate / original_rate
+#     new_length = int(len(signal) * resampling_ratio)
+#     downsampled_signal = resample(signal, new_length)
+#     return downsampled_signal
 
+# def downsample_signal(signal, original_rate, new_rate):
+#     resampling_ratio = new_rate / original_rate
+#     original_samples = signal.size
+#     new_samples = int(round(original_samples * resampling_ratio))
+#     original_time = numpy.linspace(0, 1, original_samples)
+#     new_time = numpy.linspace(0, 1, new_samples)
+#     print(new_time)
+#     fnc = interp1d(original_time, signal)
+#     subsampled = fnc(new_time)
+#     return subsampled
 
 
 def downsample_signal(signal, original_rate, new_rate):

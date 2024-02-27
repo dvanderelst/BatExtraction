@@ -40,8 +40,12 @@ for ch_files in files:
             video = Video.Video(file_name)
             led_video = ExtractLed.get_led_video(video, output_folder)
             trace = ExtractLed.get_led_trace(led_video, output_folder)
+
+            # To add markers to led video
             post_processed = ExtractLed.post_process_trace(trace, window=window, do_plot=True, led_video=led_video, output_folder=output_folder)
             Misc.add_markers_to_video(led_video, post_processed, output_folder)
+            # End add markers to led video
+
             min_trace = numpy.min(trace)
             mean_trace = numpy.mean(trace)
             max_trace = numpy.max(trace)
