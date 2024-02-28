@@ -3,6 +3,7 @@ import cv2
 import numpy
 import re
 
+
 def test_mp4_file(file_path):
     cap = cv2.VideoCapture(file_path)
     if not cap.isOpened():
@@ -30,6 +31,9 @@ class Video:
         self.channel = self.properties['channel']
         self.capture = cv2.VideoCapture(filename)
 
+    def get_frame_rate(self):
+        fps, _ = self.get_size()
+        return fps
 
     def get_size(self):
         capture = self.capture
@@ -76,7 +80,3 @@ def parse_filename(filename):
     result['second'] = int(second)
     result['channel'] = int(channel)
     return result
-
-
-
-

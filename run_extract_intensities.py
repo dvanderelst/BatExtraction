@@ -1,11 +1,12 @@
-import time
-import numpy
-from Library import ExtractLed
+from matplotlib import pyplot
 from Library import Video
 from Library import Utils
+from Library import ExtractInt
 import os
-from Library import Misc
-from matplotlib import pyplot
+import time
+import numpy
+import matplotlib
+matplotlib.use('Agg')
 
 # PARAMETERS
 drive = "/media/dieter/Panama_2024"
@@ -20,7 +21,7 @@ output_folder = os.path.join(drive, output_folder)
 Utils.create_empty_folder(output_folder, clear_existing=delete_output)
 log_file_name = os.path.join(output_folder, 'log.txt')
 log_file = open(log_file_name, 'w')
-log_file.write(time.asctime()+'\n')
+log_file.write(time.asctime() + '\n')
 log_file.close()
 
 files = Utils.get_cam_files(camera_folder)
@@ -38,19 +39,15 @@ for ch_files in files:
             unreadable_files.append(file_name)
         if can_read:
             video = Video.Video(file_name)
-            led_video = ExtractLed.get_led_video(video, output_folder)
-            trace = ExtractLed.get_led_trace(led_video, output_folder)
+            led_video = ExtractInt.get_led_video(video, output_folder)
+            fps = led_video.get_frame_rate()
+            intensities = ExtractInt.get_led_intensities(led_video, output_folder, window=1)
 
-            # To add markers to led video
-            post_processed = ExtractLed.post_process_trace(trace, window=window, do_plot=True, led_video=led_video, output_folder=output_folder)
-            Misc.add_markers_to_video(led_video, post_processed, output_folder)
-            # End add markers to led video
+            min_intensity = numpy.min(intensities)
+            mean_intensity = numpy.mean(intensities)
+            max_intensity = numpy.max(intensities)
 
-            min_trace = numpy.min(trace)
-            mean_trace = numpy.mean(trace)
-            max_trace = numpy.max(trace)
-
-            formatted_floats = [f'{x:.3f}' for x in [min_trace, mean_trace, max_trace]]
+            formatted_floats = [f'{x:.3f}' for x in [min_intensity, mean_intensity, max_intensity]]
             formatted_floats = ', '.join(formatted_floats)
 
             size1 = video.get_size()
@@ -64,8 +61,7 @@ for ch_files in files:
             time.sleep(0.1)
             counter = counter + 1
 
-            pyplot.close('all')
-
+pyplot.close('all')
 log_file = open(log_file_name, 'a')
 if len(unreadable_files) > 0:
     log_file.write('Unreadable:\n')

@@ -4,104 +4,69 @@ import numpy
 import cv2
 from tqdm import tqdm
 from matplotlib import pyplot
-import plotly.graph_objs as go
 from matplotlib.widgets import RectangleSelector
 from Library import Video
 from Library import Utils
-from plotly.subplots import make_subplots
-import wave
-
-def post_process_trace(trace, do_plot=False, window=250, led_video=False, output_folder=False):
-    smoothed_trace = Utils.smooth_with_boxcar(trace, window)
-    difference = trace - smoothed_trace
-
-    # Get outliers
-    overall_std = numpy.std(difference)
-    upper = numpy.ones(difference.shape) * overall_std * 3
-    #lower = numpy.ones(difference.shape) * overall_std * 3 * -1
-
-    #outliers = ((difference < lower) + (difference > upper)) > 0
-    outliers = (difference > upper) > 0
-    outliers = Utils.smooth_with_boxcar(outliers, window)
-    outliers = (outliers > 0) * 1.0
-
-    running_std = Utils.running_std(difference, window)
-    running_std[outliers > 0] = numpy.mean(running_std)
-    std_running_std = numpy.std(running_std)
-    constants = (running_std <= std_running_std) * 1.0
-
-    final = difference + 0.5 #1.0 * (difference > 0)
-    final[outliers > 0] = numpy.nan
-    final[constants > 0] = numpy.nan
-    final = numpy.nan_to_num(final, nan=0.5)
-
-    if do_plot:
-        fig, axs = pyplot.subplots(4, 1, sharex=True, figsize=(10, 8))  # Adjust figsize as needed
-
-        # Subplot 1
-        axs[0].plot(trace, label='Trace')
-        axs[0].plot(smoothed_trace, label='Smoothed Trace')
-        axs[0].legend(loc='best')
-
-        # Subplot 2
-        axs[1].plot(difference, label='Difference')
-        axs[1].plot(upper, label='Upper Threshold')
-        #axs[1].plot(lower, label='Lower Threshold')
-        axs[1].plot(running_std, label='Running STD')
-        axs[1].legend(loc='best')
-
-        # Subplot 3
-        axs[2].plot(outliers, label='Outlier mask')
-        axs[2].plot(constants, label='Variation mask')
-        axs[2].legend(loc='best')
-
-        # Subplot 4
-        axs[3].plot(final, label='Label')
-        axs[3].legend(loc='best')
-
-        # Save as HTML
-        base_name = led_video.basename
-        base_name = base_name.replace('LED_', 'PST_')
-        output = os.path.join(output_folder, base_name + '.html')
-        if led_video: save_html_plot(axs, output)
-        pyplot.show()
-
-    return final
+from Library import Signal
 
 
-def save_html_plot(axs, output):
-    fig = make_subplots(rows=4, cols=1, shared_xaxes=True)
-    for i, ax in enumerate(axs):
-        lines = ax.get_lines()
-        for line in lines:
-            fig.add_trace(go.Scatter(x=line.get_xdata(), y=line.get_ydata(), name=f'Subplot {i + 1}'), row=i + 1, col=1)
-    fig.update_layout(height=800, width=800, title_text="Subplots")
-    fig.write_html(output)
-
-
-def concatenate_traces(file_list):
+def concatenate_intensities(file_list, processed=True):
     trace_list = []
     file_start_indices = []
     total_length = 0
     fps = None
-
-    # Iterate through each filename in the list
     for filename in file_list:
-        # Load the .npz file
-        data = numpy.load(filename)
-        # Extract the 'trace' field from the loaded data
-        trace = data['trace']
-        # Append the 'trace' array to the list
-        trace_list.append(trace)
-        # Store the starting index of the current file
+        data = load_intensities(filename)
+        int_trace = data['processed']
+        if not processed: int_trace = data['intensities']
+        trace_list.append(int_trace)
         file_start_indices.append(total_length)
-        # Increment the total length
-        total_length += len(trace)
+        total_length += len(int_trace)
         fps = data['fps']
-
-    # Concatenate all 'trace' arrays into one long array
     concatenated_trace = numpy.concatenate(trace_list)
     return concatenated_trace, fps , file_start_indices
+
+
+def process_intensities(intensities, fps, window, do_plot=False, plot_file='', show_fig=False):
+    trend = Signal.smooth_with_boxcar(intensities, int(fps * window))
+    detrended = intensities - trend
+    local_sd = Signal.running_std(detrended, int(fps * window))
+    sd_threshold = numpy.max(local_sd) / 10
+    detrended = detrended - numpy.mean(detrended)
+    blank_removed = detrended * 1.0
+    blank_removed[local_sd < sd_threshold] = 0
+    if len(plot_file) > 0: do_plot = True
+    if do_plot:
+        threshold_line = numpy.ones(local_sd.shape) * sd_threshold
+        fig, axs = pyplot.subplots(4, 1, sharex=True, figsize=(10, 8))  # Adjust figsize as needed
+        # Subplot 1
+        axs[0].plot(intensities, label='Intensities')
+        axs[0].plot(trend, label='Trend')
+        axs[0].legend(loc='best')
+        # Subplot 2
+        axs[1].plot(detrended, label='Detrended')
+        axs[1].legend(loc='best')
+        # Subplot 2
+        axs[2].plot(local_sd, label='Local SD')
+        axs[2].plot(threshold_line, label='sd Threshold')
+        axs[2].legend(loc='best')
+        # Subplot 3
+        axs[3].plot(blank_removed, label='Processed')
+        axs[3].legend(loc='best')
+        if len(plot_file) > 0: fig.savefig(plot_file)
+        if show_fig: pyplot.show()
+        if not show_fig: pyplot.close()
+
+    return blank_removed
+
+
+def save_intensities(intensities, processed, fps, filename):
+    numpy.savez(filename, intensities=intensities, processed=processed, fps=fps)
+
+
+def load_intensities(filename):
+    data = numpy.load(filename)
+    return data
 
 
 def get_led_video(video, output_folder):
@@ -115,16 +80,18 @@ def get_led_video(video, output_folder):
         size = led_video.get_size()
         if size[0] == 0: led_file_exists = False
     if not led_file_exists:
-        extract_led_video(video, box, led_video_file)
+        make_led_video(video, box, led_video_file)
         time.sleep(0.25)
         led_video = Video.Video(led_video_file)
     return led_video
 
 
-def get_led_trace(led_video, output_folder):
+def get_led_intensities(led_video, output_folder, window=1, save_plot=True):
     basename = led_video.basename
     basename = basename.replace('LED_', '')
-    led_trace_file = os.path.join(output_folder, 'TRC_' + basename + '.npz')
+    led_intensity_file = os.path.join(output_folder, 'INT_' + basename + '.npz')
+    led_intensity_plot = os.path.join(output_folder, 'PLT_' + basename + '.png')
+    if not save_plot: led_intensity_plot = False
     capture = led_video.capture
     fps, total_number_of_frames = led_video.get_size()
     intensities = []
@@ -133,14 +100,14 @@ def get_led_trace(led_video, output_folder):
         mean = numpy.mean(frame)
         intensities.append(mean)
     intensities = numpy.array(intensities)
-    Utils.save_trace(intensities, fps, led_trace_file)
+    processed = process_intensities(intensities, fps, window, plot_file=led_intensity_plot)
+    save_intensities(intensities, processed, fps, led_intensity_file)
     return intensities
 
 
-def extract_led_video(video, bounding_box, output_file):
+def make_led_video(video, bounding_box, output_file):
     capture = video.capture
     fps, total_number_of_frames = video.get_size()
-
     x1, y1, x2, y2 = bounding_box
     x1 = int(x1)
     x2 = int(x2)

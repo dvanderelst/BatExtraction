@@ -1,42 +1,10 @@
-import re
-import natsort
 import os
-import shutil
 import pickle
-import numpy
+import re
+import shutil
+
+import natsort
 from scipy.io import loadmat
-from scipy.interpolate import interp1d
-from scipy.signal import resample
-
-# def downsample_signal(signal, original_rate, new_rate):
-#     resampling_ratio = new_rate / original_rate
-#     new_length = int(len(signal) * resampling_ratio)
-#     downsampled_signal = resample(signal, new_length)
-#     return downsampled_signal
-
-# def downsample_signal(signal, original_rate, new_rate):
-#     resampling_ratio = new_rate / original_rate
-#     original_samples = signal.size
-#     new_samples = int(round(original_samples * resampling_ratio))
-#     original_time = numpy.linspace(0, 1, original_samples)
-#     new_time = numpy.linspace(0, 1, new_samples)
-#     print(new_time)
-#     fnc = interp1d(original_time, signal)
-#     subsampled = fnc(new_time)
-#     return subsampled
-
-
-def downsample_signal(signal, original_rate, new_rate):
-    downsampling_factor = int(original_rate / new_rate)
-    downsampled_signal = signal[::downsampling_factor]
-    return downsampled_signal
-
-def upsample_signal(signal, original_rate, new_rate):
-    ratio = new_rate / original_rate
-    original_time = numpy.arange(len(signal))
-    new_time = numpy.arange(0, len(signal), 1 / ratio)
-    upsampled_signal = numpy.interp(new_time, original_time, signal)
-    return upsampled_signal
 
 
 def read_mat_file(file_path):
@@ -48,42 +16,12 @@ def read_mat_file(file_path):
     result = {}
     result['audio'] = audio
     result['sps'] = data['sampleRate'][0][0]
-    #result['raw'] = data
+    # result['raw'] = data
     return result
-
-def running_std(arr, window_size):
-    rolling_mean = numpy.convolve(arr, numpy.ones(window_size)/window_size, mode='valid')
-    rolling_sum_squares = numpy.convolve(arr**2, numpy.ones(window_size)/window_size, mode='valid')
-    rolling_var = rolling_sum_squares - rolling_mean**2
-    rolling_var = numpy.maximum(rolling_var, 0)
-    rolling_std = numpy.sqrt(rolling_var)
-    pad_left = (window_size - 1) // 2
-    pad_right = window_size - 1 - pad_left
-    rolling_std = numpy.pad(rolling_std, (pad_left, pad_right), mode='edge')
-    return rolling_std
-
-
-
-def smooth_with_boxcar(array, window_size):
-    if window_size % 2 == 0: window_size += 1
-    reflected_array = numpy.pad(array, window_size // 2, mode='reflect')
-    kernel = numpy.ones(window_size) / window_size
-    smoothed_array = numpy.convolve(reflected_array, kernel, mode='valid')
-    return smoothed_array
-
-
-def scale(arr):
-    scaled_arr = (arr - arr.min()) / (arr.max() - arr.min())
-    return scaled_arr
 
 
 def list_to_line(lst):
     return ', '.join(map(str, lst)) + '\n'
-
-
-
-def save_trace(trace, rate, filename):
-    numpy.savez(filename, trace=trace, fps=rate)
 
 
 def split_filename(file_path):
@@ -131,20 +69,19 @@ def get_mat_files(directory):
     return mat_files
 
 
-def get_trc_files(directory):
-    trc_files = []
+def get_int_files(directory):
+    int_files = []
     files = os.listdir(directory)
     for file in files:
-        if file.startswith('TRC'): trc_files.append(file)
+        if file.startswith('INT'): int_files.append(file)
 
-    trc_files_full = []
-    for trc_file in trc_files:
-       trc_file_full = os.path.join(directory, trc_file)
-       trc_files_full.append(trc_file_full)
+    int_files_full = []
+    for int_file in int_files:
+        int_file_full = os.path.join(directory, int_file)
+        int_files_full.append(int_file_full)
 
-    file_names = split_files_by_channel(trc_files_full)
+    file_names = split_files_by_channel(int_files_full)
     return file_names
-
 
 
 def get_cam_files(directory):
@@ -174,4 +111,3 @@ def split_files_by_channel(file_names):
 
     file_names = [ch1, ch2, ch3, ch4]
     return file_names
-
