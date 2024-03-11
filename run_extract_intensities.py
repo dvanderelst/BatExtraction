@@ -6,31 +6,44 @@ import os
 import time
 import numpy
 import matplotlib
-matplotlib.use('Agg')
+matplotlib.use('TkAgg')
 
 # PARAMETERS
 drive = "/media/dieter/Panama_2024"
-video_folder = 'downloaded_data/2024-2-19'
-output_folder = 'output2'
-delete_output = False
-window = 25
+video_folder = 'new_data/video'
+output_folder = 'output3'
+
+
+remove1 = []
+remove2 = []
+remove3 = []
+remove4 = []
 #############
 
 camera_folder = os.path.join(drive, video_folder)
 output_folder = os.path.join(drive, output_folder)
-Utils.create_empty_folder(output_folder, clear_existing=delete_output)
+Utils.create_empty_folder(output_folder)
 log_file_name = os.path.join(output_folder, 'log.txt')
 log_file = open(log_file_name, 'w')
 log_file.write(time.asctime() + '\n')
+log_file.write(str([remove1, remove2, remove3, remove4]) + '\n')
 log_file.close()
 
 files = Utils.get_cam_files(camera_folder)
+Utils.visualize_cam_file_durations(files, output_folder)
+
+files, removed_files = Utils.purge_cam_files(files, remove1, remove2, remove3, remove4)
+removed_files_basenames = Utils.get_basenames(removed_files)
+Utils.remove_files_containing_substrings(output_folder, removed_files_basenames)
+Utils.visualize_cam_file_durations(files, output_folder, prefix='removed_')
+
 unreadable_files = []
 counter = 0
 for ch_files in files:
     log_file = open(log_file_name, 'a')
     log_file.write(time.asctime() + '\n')
     log_file.close()
+    processed_file_index = 0
     for file_name in ch_files:
         print('*' * 50)
         print(file_name)
@@ -41,29 +54,22 @@ for ch_files in files:
             video = Video.Video(file_name)
             led_video = ExtractInt.get_led_video(video, output_folder)
             fps = led_video.get_frame_rate()
-            intensities = ExtractInt.get_led_intensities(led_video, output_folder, window=1)
-
-            min_intensity = numpy.min(intensities)
-            mean_intensity = numpy.mean(intensities)
-            max_intensity = numpy.max(intensities)
-
-            formatted_floats = [f'{x:.3f}' for x in [min_intensity, mean_intensity, max_intensity]]
-            formatted_floats = ', '.join(formatted_floats)
+            intensities = ExtractInt.get_led_intensities(led_video, output_folder)
 
             size1 = video.get_size()
             size2 = led_video.get_size()
 
-            line = Utils.list_to_line([file_name, size1, size2, formatted_floats])
+            line = Utils.list_to_line([processed_file_index, file_name, size1, size2])
             log_file = open(log_file_name, 'a')
             log_file.write(line)
             log_file.close()
+            processed_file_index = processed_file_index + 1
 
             time.sleep(0.1)
             counter = counter + 1
 
 pyplot.close('all')
 log_file = open(log_file_name, 'a')
-if len(unreadable_files) > 0:
-    log_file.write('Unreadable:\n')
-    for x in unreadable_files: log_file.write(x + '\n')
+log_file.write('Unreadable:\n')
+for x in unreadable_files: log_file.write(x + '\n')
 log_file.close()

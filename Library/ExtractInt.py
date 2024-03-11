@@ -5,9 +5,22 @@ import cv2
 from tqdm import tqdm
 from matplotlib import pyplot
 from matplotlib.widgets import RectangleSelector
+from datetime import datetime, timedelta
 from Library import Video
 from Library import Utils
-from Library import Signal
+
+
+def get_filename_for_index(intensity_index, intensity_data):
+    filenames = intensity_data['cam_files']
+    indices = intensity_data['indices']
+    fps = intensity_data['fps']
+    for i, idx in enumerate(indices):
+        if intensity_index >= idx and (i == len(indices) - 1 or intensity_index < indices[i+1]):
+            filename = filenames[i]
+            delta_time = (intensity_index - indices[i]) / fps
+            delta_time = timedelta(seconds=delta_time)
+            return filename, delta_time
+    return None, None
 
 
 def concatenate_intensities(file_list, processed=True):
@@ -17,51 +30,17 @@ def concatenate_intensities(file_list, processed=True):
     fps = None
     for filename in file_list:
         data = load_intensities(filename)
-        int_trace = data['processed']
-        if not processed: int_trace = data['intensities']
-        trace_list.append(int_trace)
+        intensities = data['intensities']
+        trace_list.append(intensities)
         file_start_indices.append(total_length)
-        total_length += len(int_trace)
+        total_length += len(intensities)
         fps = data['fps']
     concatenated_trace = numpy.concatenate(trace_list)
-    return concatenated_trace, fps , file_start_indices
+    return concatenated_trace, fps, file_start_indices
 
 
-def process_intensities(intensities, fps, window, do_plot=False, plot_file='', show_fig=False):
-    trend = Signal.smooth_with_boxcar(intensities, int(fps * window))
-    detrended = intensities - trend
-    local_sd = Signal.running_std(detrended, int(fps * window))
-    sd_threshold = numpy.max(local_sd) / 10
-    detrended = detrended - numpy.mean(detrended)
-    blank_removed = detrended * 1.0
-    blank_removed[local_sd < sd_threshold] = 0
-    if len(plot_file) > 0: do_plot = True
-    if do_plot:
-        threshold_line = numpy.ones(local_sd.shape) * sd_threshold
-        fig, axs = pyplot.subplots(4, 1, sharex=True, figsize=(10, 8))  # Adjust figsize as needed
-        # Subplot 1
-        axs[0].plot(intensities, label='Intensities')
-        axs[0].plot(trend, label='Trend')
-        axs[0].legend(loc='best')
-        # Subplot 2
-        axs[1].plot(detrended, label='Detrended')
-        axs[1].legend(loc='best')
-        # Subplot 2
-        axs[2].plot(local_sd, label='Local SD')
-        axs[2].plot(threshold_line, label='sd Threshold')
-        axs[2].legend(loc='best')
-        # Subplot 3
-        axs[3].plot(blank_removed, label='Processed')
-        axs[3].legend(loc='best')
-        if len(plot_file) > 0: fig.savefig(plot_file)
-        if show_fig: pyplot.show()
-        if not show_fig: pyplot.close()
-
-    return blank_removed
-
-
-def save_intensities(intensities, processed, fps, filename):
-    numpy.savez(filename, intensities=intensities, processed=processed, fps=fps)
+def save_intensities(intensities, fps, filename):
+    numpy.savez(filename, intensities=intensities, fps=fps)
 
 
 def load_intensities(filename):
@@ -86,12 +65,10 @@ def get_led_video(video, output_folder):
     return led_video
 
 
-def get_led_intensities(led_video, output_folder, window=1, save_plot=True):
+def get_led_intensities(led_video, output_folder):
     basename = led_video.basename
     basename = basename.replace('LED_', '')
     led_intensity_file = os.path.join(output_folder, 'INT_' + basename + '.npz')
-    led_intensity_plot = os.path.join(output_folder, 'PLT_' + basename + '.png')
-    if not save_plot: led_intensity_plot = False
     capture = led_video.capture
     fps, total_number_of_frames = led_video.get_size()
     intensities = []
@@ -100,8 +77,7 @@ def get_led_intensities(led_video, output_folder, window=1, save_plot=True):
         mean = numpy.mean(frame)
         intensities.append(mean)
     intensities = numpy.array(intensities)
-    processed = process_intensities(intensities, fps, window, plot_file=led_intensity_plot)
-    save_intensities(intensities, processed, fps, led_intensity_file)
+    save_intensities(intensities, fps, led_intensity_file)
     return intensities
 
 

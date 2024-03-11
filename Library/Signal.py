@@ -1,6 +1,9 @@
+import time
+
 import numpy
 from matplotlib import pyplot as plt
-
+from scipy.signal import correlate
+from scipy.signal import savgol_filter
 
 def running_std(arr, window_size):
     rolling_mean = numpy.convolve(arr, numpy.ones(window_size) / window_size, mode='valid')
@@ -19,6 +22,13 @@ def smooth_with_boxcar(array, window_size):
     reflected_array = numpy.pad(array, window_size // 2, mode='reflect')
     kernel = numpy.ones(window_size) / window_size
     smoothed_array = numpy.convolve(reflected_array, kernel, mode='valid')
+    return smoothed_array
+
+
+def smooth_with_savgol(array, window_size):
+    polyorder = 2
+    if window_size % 2 == 0: window_size += 1
+    smoothed_array = savgol_filter(array, window_size, polyorder)
     return smoothed_array
 
 
@@ -41,15 +51,20 @@ def upsample_signal(signal, original_rate, new_rate):
     return upsampled_signal
 
 
-def find_best_match(short_signal, long_signal):
-    cross_corr = numpy.correlate(long_signal, short_signal, mode='full')
+def find_best_match(audio_signal, intensities):
+    start = time.time()
+    #cross_corr = numpy.correlate(intensities, audio_signal, mode='full')
+    cross_corr = correlate(intensities, audio_signal, mode='full')
+    end = time.time()
+    print('corr time', end - start)
     best_match_index = numpy.argmax(cross_corr)
-    start_index = best_match_index - len(short_signal) + 1
+    start_index = best_match_index - len(audio_signal) + 1
 
     plt.figure()
-    plt.plot(long_signal, label='Long Array')
-    plt.plot(numpy.arange(start_index, start_index + len(short_signal)), short_signal, label='Short Array Shifted')
+    plt.plot(intensities, label='Intensities')
+    plt.plot(numpy.arange(start_index, start_index + len(audio_signal)), audio_signal, label='Audio sync')
     plt.legend()
+    plt.title('Matched')
     plt.show()
 
     return start_index, cross_corr
