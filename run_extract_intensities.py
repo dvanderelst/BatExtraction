@@ -2,22 +2,22 @@ from matplotlib import pyplot
 from Library import Video
 from Library import Utils
 from Library import ExtractInt
+from Library import Settings
 import os
 import time
 import numpy
 import matplotlib
-matplotlib.use('TkAgg')
+#matplotlib.use('TkAgg')
 
 # PARAMETERS
-drive = "/media/dieter/Panama_2024"
-video_folder = 'new_data/video'
-output_folder = 'output3'
+drive = Settings.drive
+video_folder = Settings.video_folder
+output_folder = Settings.output_folder
 
-
-remove1 = []
-remove2 = []
-remove3 = []
-remove4 = []
+remove1 = Settings.remove1
+remove2 = Settings.remove2
+remove3 = Settings.remove3
+remove4 = Settings.remove4
 #############
 
 camera_folder = os.path.join(drive, video_folder)

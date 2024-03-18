@@ -1,7 +1,7 @@
 from Library import Signal
 from Library import ExtractInt
-from Library import Video
 from Library import Utils
+from Library import Video
 from matplotlib import pyplot
 import shutil
 import numpy
@@ -9,10 +9,10 @@ import os
 
 # PARAMETERS #############################
 drive = "/media/dieter/Panama_2024"
-audio_folder = 'new_data/30Hz'
+audio_folder = 'downloaded_data3/2024_03_08_30Hz_mov'
 output_folder = 'output3'
 result_folder = 'result3'
-selected_file_index = 0
+selected_file_index = 2
 #########################################
 video_channels = [1, 2, 3, 4]
 
@@ -32,6 +32,8 @@ mat_data = Utils.read_mat_file(audio_file)
 audio_signals = mat_data['audio']
 audio_sps = mat_data['sps']
 
+print('==========')
+
 average = numpy.mean(audio_signals, axis=1)
 selected_samples = average > 0
 audio_signals = audio_signals[selected_samples, :]
@@ -42,15 +44,16 @@ intensity_file = os.path.join(output_folder, f'intensity_channel_1.pck')
 intensity_data = Utils.load_from_pickle(intensity_file)
 camera_fps = intensity_data['fps']
 
-resample_ratio = int(0.5 * (audio_sps / camera_fps))
+smoothing_window = int(0.5 * (audio_sps / camera_fps))
 audio_sync_sigal = (audio_signals[:, -1] > 0.5) * 1.0
-audio_sync_sigal = Signal.smooth_with_boxcar(audio_sync_sigal, resample_ratio)
+audio_sync_sigal = Signal.smooth_with_boxcar(audio_sync_sigal, smoothing_window)
 downsampled_sync_signal = Signal.downsample_signal(audio_sync_sigal, audio_sps, camera_fps)
 downsampled_sync_signal = Signal.scale(downsampled_sync_signal)
 
 shutil.copy(audio_file, result_folder)
 
 for video_channel in video_channels:
+
     intensity_file = os.path.join(output_folder, f'intensity_channel_{video_channel}.pck')
     intensity_data = Utils.load_from_pickle(intensity_file)
     camera_fps = intensity_data['fps']
@@ -116,3 +119,9 @@ for video_channel in video_channels:
     Video.requested2video(requested_filenames, requested_indices, output_filename=result_video_filename)
 
     pyplot.close('all')
+
+#%%
+pyplot.figure()
+pyplot.plot(downsampled_sync_signal)
+pyplot.figure()
+

@@ -4,26 +4,22 @@ import numpy
 
 from Library import ExtractInt
 from Library import Utils
+from Library import Settings
 from matplotlib import pyplot
 from Library import Signal
 
-matplotlib.use('TkAgg')
+#matplotlib.use('TkAgg')
 thresholds = {}
 
 # PARAMETERS
-drive = "/media/dieter/Panama_2024"
-video_folder = 'new_data/video'
-output_folder = 'output3'
+drive = Settings.drive
+video_folder = Settings.video_folder
+output_folder = Settings.output_folder
 
-#thresholds[1] = [60, 120, 15]
-#thresholds[2] = [90, 130, 7.5]
-#thresholds[3] = [95, 115, 4]
-#thresholds[4] = [75, 95, 3.5]
-
-thresholds[1] = [-75, 75, 15]
-thresholds[2] = [-75, 75, 7.5]
-thresholds[3] = [-75, 75, 4]
-thresholds[4] = [-75, 75, 3.5]
+thresholds[1] = Settings.thresholds1
+thresholds[2] = Settings.thresholds2
+thresholds[3] = Settings.thresholds3
+thresholds[4] = Settings.thresholds4
 
 ############
 
@@ -92,3 +88,4 @@ for channel_ints, channel_cams in zip(int_files_channels, cam_files_channels):
     channel = channel + 1
 
 pyplot.show()
+

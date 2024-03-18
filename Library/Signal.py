@@ -18,10 +18,13 @@ def running_std(arr, window_size):
 
 
 def smooth_with_boxcar(array, window_size):
+    start = time.time()
     if window_size % 2 == 0: window_size += 1
     reflected_array = numpy.pad(array, window_size // 2, mode='reflect')
     kernel = numpy.ones(window_size) / window_size
     smoothed_array = numpy.convolve(reflected_array, kernel, mode='valid')
+    end = time.time()
+    #print('smoothing duration', end - start)
     return smoothed_array
 
 

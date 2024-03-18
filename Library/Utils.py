@@ -2,7 +2,7 @@ import os
 import pickle
 import re
 import shutil
-
+import time
 import natsort
 from scipy.io import loadmat
 from datetime import datetime
@@ -112,15 +112,19 @@ def plot_times(start_time, end_time, y_position, color='blue'):
 
 
 def read_mat_file(file_path):
+    start = time.time()
     audio = None
     pattern = re.compile(r'data\d{2}')
     data = loadmat(file_path)
     for key, value in data.items():
-        if pattern.match(key): audio = value
+        if pattern.match(key):
+            audio = value
+            break
     result = {}
     result['audio'] = audio
     result['sps'] = data['sampleRate'][0][0]
-    # result['raw'] = data
+    end = time.time()
+    #print('read mat time:', end - start)
     return result
 
 
