@@ -24,6 +24,7 @@ def print_dict_fields(dictionary, output_file=None):
         with open(output_file, 'w') as file:
             for line in output_lines:
                 file.write(line + '\n')
+    return output_lines
 
 
 def get_audio_time(filename):
@@ -112,19 +113,15 @@ def plot_times(start_time, end_time, y_position, color='blue'):
 
 
 def read_mat_file(file_path):
-    start = time.time()
     audio = None
-    pattern = re.compile(r'data\d{2}')
+    pattern = re.compile(r'data\d+')
     data = loadmat(file_path)
     for key, value in data.items():
-        if pattern.match(key):
-            audio = value
-            break
+        if pattern.match(key): audio = value
     result = {}
     result['audio'] = audio
     result['sps'] = data['sampleRate'][0][0]
     end = time.time()
-    #print('read mat time:', end - start)
     return result
 
 
@@ -137,6 +134,10 @@ def split_filename(file_path):
     basename, extension = os.path.splitext(full_filename)
     return path, basename, extension
 
+
+def remove_file(file_path):
+    if os.path.exists(file_path):
+        os.remove(file_path)
 
 def remove_files_containing_substrings(folder_path, substrings):
     # Get list of files in the folder
@@ -156,6 +157,12 @@ def get_basename(file_path):
     path, basename, extension = split_filename(file_path)
     return basename
 
+
+def modify_basename(filepath, prefix='', suffix=''):
+    directory, filename = os.path.split(filepath)
+    basename, ext = os.path.splitext(filename)
+    new_filepath = prefix + basename + suffix + ext
+    return filepath
 
 def get_basenames(file_paths):
     basenames = []
@@ -194,11 +201,12 @@ def create_empty_folder(folder_path, clear_existing=False):
         print(f"Error creating empty folder: {e}")
 
 
-def get_mat_files(directory):
+def get_mat_files(directory, runs=None):
     mat_files = []
     for file in os.listdir(directory):
         if file.endswith(".mat"):
-            mat_files.append(os.path.join(directory, file))
+            if runs is None or any(f"run{num}" in file for num in runs):
+                mat_files.append(os.path.join(directory, file))
     mat_files = natsort.natsorted(mat_files)
     return mat_files
 
@@ -217,6 +225,19 @@ def get_int_files(directory):
     file_names = split_files_by_channel(int_files_full)
     return file_names
 
+
+def get_movie_files(directory, extension='mkv'):
+    directory = os.path.abspath(directory)
+    files = os.listdir(directory)
+    movie_files = [file for file in files if file.lower().endswith('.' + extension)]
+    movie_files = natsort.natsorted(movie_files)
+
+    movie_files_full = []
+    for movie_file in movie_files:
+        mp4_file_full = os.path.join(directory, movie_file)
+        movie_files_full.append(mp4_file_full)
+
+    return movie_files_full
 
 def get_cam_files(directory):
     directory = os.path.abspath(directory)

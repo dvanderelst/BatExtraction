@@ -1,8 +1,12 @@
-from Library import Utils
-from tqdm import tqdm
+import os
+import re
+
 import cv2
 import numpy
-import re
+from moviepy.editor import VideoFileClip, clips_array
+from tqdm import tqdm
+
+from Library import Utils
 
 
 def get_filename_indices(intensity_data, start_index, samples):
@@ -27,7 +31,8 @@ def requested2video(requested_filenames, requested_indices, output_filename):
     ret, frame = cap.read()
     output_height, output_width, _ = frame.shape
     output_fps = cap.get(cv2.CAP_PROP_FPS)
-    fourcc = cv2.VideoWriter_fourcc(*'mp4v')
+    #fourcc = cv2.VideoWriter_fourcc(*'mp4v')
+    fourcc = cv2.VideoWriter_fourcc(*'X264')  # Use libx264 codec
     out = cv2.VideoWriter(output_filename, fourcc, output_fps, (output_width, output_height))
     total_frames = len(requested_indices)
 
@@ -40,6 +45,10 @@ def requested2video(requested_filenames, requested_indices, output_filename):
             pbar.update(1)
             cap.release()
     out.release()
+
+    #Convert to other codec. Opencv does not support this codec
+    #encoded_file_name = Utils.modify_basename(output_filename, suffix='_aac')
+    #recode_video(encoded_file_name, encoded_file_name)
 
 
 def test_mp4_file(file_path):
@@ -118,3 +127,80 @@ def parse_filename(filename):
     result['second'] = int(second)
     result['channel'] = int(channel)
     return result
+
+
+def recode_video(input_file, output_file):
+    try:
+        clip = VideoFileClip(input_file)
+        clip.write_videofile(output_file, codec='libx264')
+        print("Video encoding completed successfully.")
+    except Exception as e:
+        print("Error:", e)
+        print("Video encoding failed.")
+
+
+def combine_videos(input_paths, output_path, fps):
+    file1 = input_paths[0]
+    file2 = input_paths[1]
+    file3 = input_paths[2]
+    file4 = input_paths[3]
+    # Load video clips
+    clip1 = VideoFileClip(file1).resize(0.5)
+    clip2 = VideoFileClip(file2).resize(0.5)
+    clip3 = VideoFileClip(file3).resize(0.5)
+    clip4 = VideoFileClip(file4).resize(0.5)
+    # Stitch clips together in a 2 by 2 array
+    final_clip = clips_array([[clip1, clip2], [clip3, clip4]])
+    # Write the final clip to a file
+    final_clip.write_videofile(output_path, codec='libx264', fps=fps)
+    # Close all clips
+    clip1.close()
+    clip2.close()
+    clip3.close()
+    clip4.close()
+
+# def recode_video(input_file, output_file):
+#     ffmpeg_command = [
+#         'ffmpeg',
+#         '-i', input_file,
+#         '-c:v', 'libx264',
+#         output_file
+#     ]
+#     print(ffmpeg_command)
+#     try:
+#         result = subprocess.run(ffmpeg_command, check=True)
+#         print("FFMPEG Output:", result.stdout.decode('utf-8'))
+#         print("FFMPEG Error:", result.stderr.decode('utf-8'))
+#         print("Video encoding completed successfully.")
+#     except subprocess.CalledProcessError as e:
+#         print("Error:", e)
+#         print("Video encoding failed.")
+
+
+
+
+# def combine_videos(input_paths, output_path):
+#     # Construct ffmpeg command to combine videos
+#     cmd = [
+#         'ffmpeg',
+#         '-i', input_paths[0], '-i', input_paths[1], '-i', input_paths[2], '-i', input_paths[3],
+#         '-filter_complex',
+#         '[0:v]scale=iw/2:ih/2[v0];[1:v]scale=iw/2:ih/2[v1];[2:v]scale=iw/2:ih/2[v2];[3:v]scale=iw/2:ih/2[v3];[v0][v1]hstack[top];[v2][v3]hstack[bottom];[top][bottom]vstack=inputs=2',
+#         '-c:v', 'libx264', '-crf', '23',
+#         output_path
+#     ]
+#
+#     # Run ffmpeg command
+#     try:
+#         subprocess.run(cmd, check=True)
+#         print(f"Combined video successfully saved to {output_path}")
+#     except subprocess.CalledProcessError as e:
+#         print(f"Error combining videos: {e}")
+
+
+
+def create_combined_video(directory, fps):
+    output = os.path.join(directory, 'combined.mkv')
+    Utils.remove_file(output)
+    videos = Utils.get_movie_files(directory)
+    combine_videos(videos, output, fps)
