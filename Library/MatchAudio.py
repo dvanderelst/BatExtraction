@@ -21,7 +21,7 @@ def match_audio(audio_file, write_video=True):
     result_folder = os.path.join(drive, result_folder, audio_file_basename)
     video_channels = [1, 2, 3, 4]
 
-    Utils.create_empty_folder(result_folder)
+    Utils.create_output_folder_structure(result_folder)
 
     mat_data = Utils.read_mat_file(audio_file)
     audio_signals = mat_data['audio']

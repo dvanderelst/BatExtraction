@@ -1,5 +1,6 @@
 import os
 import time
+
 import numpy
 import cv2
 from tqdm import tqdm
@@ -48,27 +49,37 @@ def load_intensities(filename):
     return data
 
 
-def get_led_video(video, output_folder):
+def get_led_video(video, channel, admin_helper):
     basename = video.basename
-    led_video_file = os.path.join(output_folder, 'LED_' + basename + '.mp4')
-    led_file_exists = os.path.isfile(led_video_file)
-    box = get_box(video, output_folder)
+    output_folder = admin_helper.get_output_folder()
+    led_output_folder = admin_helper.get_folder(channel, 'led')
+    led_output_file = os.path.join(led_output_folder, 'LED_' + basename + '.mp4')
+    led_file_exists = os.path.isfile(led_output_file)
+    box = get_box(video, admin_helper)
     led_video = False
     if led_file_exists:
-        led_video = Video.Video(led_video_file)
+        message = f"LED video exists: {led_output_file}"
+        admin_helper.write(message)
+        led_video = Video.Video(led_output_file)
         size = led_video.get_size()
         if size[0] == 0: led_file_exists = False
     if not led_file_exists:
-        make_led_video(video, box, led_video_file)
+        message = f"Creating LED video: {led_output_file}"
+        admin_helper.write(message)
+        make_led_video(video, box, led_output_file)
         time.sleep(0.25)
-        led_video = Video.Video(led_video_file)
+        led_video = Video.Video(led_output_file)
     return led_video
 
 
-def get_led_intensities(led_video, output_folder):
+def get_led_intensities(led_video, channel, admin_helper):
+    message = f"Getting intensities for: {led_video.filename}"
+    admin_helper.write(message)
     basename = led_video.basename
     basename = basename.replace('LED_', '')
-    led_intensity_file = os.path.join(output_folder, 'INT_' + basename + '.npz')
+    output_folder = admin_helper.get_output_folder()
+    int_output_folder = admin_helper.get_folder(channel, 'int')
+    int_output_file = os.path.join(int_output_folder, 'INT_' + basename + '.npz')
     capture = led_video.capture
     fps, total_number_of_frames = led_video.get_size()
     intensities = []
@@ -77,7 +88,7 @@ def get_led_intensities(led_video, output_folder):
         mean = numpy.mean(frame)
         intensities.append(mean)
     intensities = numpy.array(intensities)
-    save_intensities(intensities, fps, led_intensity_file)
+    save_intensities(intensities, fps, int_output_file)
     return intensities
 
 
@@ -105,17 +116,20 @@ def make_led_video(video, bounding_box, output_file):
     output.release()
 
 
-def get_box(video, output_folder):
+def get_box(video, admin_helper):
+    output_folder = admin_helper.get_output_folder()
     channel = video.channel
     box_file = os.path.join(output_folder, 'box_channel_' + str(channel) + '.pck')
     box_file_exists = os.path.isfile(box_file)
     if box_file_exists:
         box = Utils.load_from_pickle(box_file)
-        print(f"Box loaded from: {box_file}")
+        message = f"Box loaded from: {box_file}"
+        admin_helper.write(message)
     else:
         box = draw_box(video)
         Utils.save_to_pickle(box, box_file)
-        print(f"Box saved to: {box_file}")
+        message = f"Box saved to: {box_file}"
+        admin_helper.write(message)
     return box
 
 
@@ -137,8 +151,7 @@ class BoxSelector:
         self.fig, self.ax = pyplot.subplots()
         self.ax.imshow(self.image)
         self.ax.set_title(self.title)
-        self.toggle_selector = RectangleSelector(self.ax, self.line_select_callback,
-                                                 drawtype='box', useblit=True,
+        self.toggle_selector = RectangleSelector(self.ax, self.line_select_callback, useblit=True,
                                                  button=[1], minspanx=5, minspany=5,
                                                  spancoords='pixels', interactive=True)
         self.fig.canvas.mpl_connect('key_press_event', self.key_press_callback)

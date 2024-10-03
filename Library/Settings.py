@@ -1,15 +1,16 @@
 ffmpeg_path = '/home/dieter/anaconda3/bin/ffmpeg'
 
-drive = "/media/dieter/Panama_2024"
+drive = "/media/dieter/Mmicrotis_search_Dieter"
+output_location = '/home/dieter/Desktop'
 
-video_folder = 'downloaded_data4/2024-3-14'
-audio_folder = 'downloaded_data4/89Hz'
+video_folder = 'Mmicrotis_video/2024_01_30_3Ind_manuel'
+audio_folder = 'Mmicrotis_audio/2024_01_30_3Ind_manuel'
 
-output_folder = 'output4'
-result_folder = 'result4'
+output_folder = 'test_output'
+
 
 # These are the videofile indices not to be processed
-remove1 = []
+remove1 = [10,15]
 remove2 = []
 remove3 = []
 remove4 = []

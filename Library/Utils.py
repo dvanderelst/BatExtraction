@@ -10,6 +10,7 @@ from matplotlib import pyplot as plt
 from datetime import datetime, timedelta
 
 
+
 def print_dict_fields(dictionary, output_file=None):
     max_key_length = max(len(str(key)) for key in dictionary.keys())
     output_lines = []
@@ -52,7 +53,7 @@ def purge_cam_files(cam_files, remove1=[], remove2=[], remove3=[], remove4=[]):
     return new, removed
 
 
-def visualize_cam_file_durations(cam_files, output_folder, prefix=''):
+def visualize_cam_file_durations(cam_files, output_folder, prefix='', show=False):
     one_minute = timedelta(minutes=1)
     longest = longest_list_length(cam_files)
     min_start_time, max_end_time = get_min_max_times(cam_files)
@@ -68,9 +69,10 @@ def visualize_cam_file_durations(cam_files, output_folder, prefix=''):
         plt.title(channel)
         channel = channel + 1
     output_file = os.path.join(output_folder, prefix + 'timing.png')
-    plt.savefig(output_file)
     plt.tight_layout()
-    plt.show()
+    plt.savefig(output_file)
+    if show: plt.show()
+    if not show: plt.close()
 
 
 def longest_list_length(list_of_lists):
@@ -190,16 +192,6 @@ def load_from_pickle(file_path):
     except Exception as e:
         #print(f"Error loading object from pickle file: {e}")
         return None
-
-
-def create_empty_folder(folder_path, clear_existing=False):
-    try:
-        if os.path.exists(folder_path) and clear_existing:
-            shutil.rmtree(folder_path)
-        os.makedirs(folder_path, exist_ok=True)
-    except Exception as e:
-        print(f"Error creating empty folder: {e}")
-
 
 def get_mat_files(directory, runs=None):
     mat_files = []
