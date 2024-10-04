@@ -3,15 +3,18 @@ import shutil
 from Library import Utils
 import os.path as path
 import os
+from multiprocessing import Manager, Lock
 
+from multiprocessing import Manager, Lock
 
 class AdminHelper:
-    def __init__(self, video_folder, output_folder):
+    def __init__(self, video_folder, output_folder, shared_data, log_lock):
         self.video_files = Utils.get_video_files(video_folder)
         self.processing_progress = video_files_to_dict(self.video_files)
         self.folders = create_output_folder_structure(output_folder, clear_existing=False)
         self.log_file = path.join(output_folder, 'log.html')
-        self.log_list = []
+        self.shared_data = shared_data  # Shared dictionary for logging across processes
+        self.log_lock = log_lock  # Lock to synchronize access to shared log list
 
     def log(self, level, message, write2file=False):
         level_type = 'NONE'
@@ -19,11 +22,23 @@ class AdminHelper:
         if level == 1: level_type = 'WARNING'
         if level >= 2: level_type = 'ERROR'
         asc_time = time.asctime()
-        self.log_list.append([asc_time, level_type, message])
-        if write2file: self.write2logfile([asc_time, level_type, message])
+
+        log_item = [asc_time, level_type, message]
+
+        # Use a lock to prevent race conditions when appending to the shared log list
+        with self.log_lock:
+            self.shared_data['log_list'].append(log_item)
+
+        if write2file:
+            self.write2logfile(log_item)
 
     def write_log(self):
-        write_logs_to_html(self.log_list, self.log_file)
+        # Write logs from shared data to the HTML log file
+        write_logs_to_html(self.shared_data['log_list'], self.log_file)
+
+    def write2logfile(self, log_item):
+        # You can expand this function to directly append new logs to the HTML file if needed.
+        pass
 
     def get_output_folder(self):
         return self.folders['output_folder']

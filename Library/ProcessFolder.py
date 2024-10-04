@@ -1,15 +1,27 @@
 import multiprocessing
-from multiprocessing import Semaphore
 from Library import Video
 from Library import Utils
 from Library import ExtractInt
 from Library import AdminHelper
 from Library import Settings
 from Library import ProcessVideo
-import os
+from multiprocessing import Semaphore, Manager, Lock
 
 def process_folder(video_folder, output_folder):
-    admin_helper = AdminHelper.AdminHelper(video_folder, output_folder)
+    # Create a Manager instance
+    manager = Manager()
+
+    # Create shared data and lock using the Manager instance
+    shared_data = manager.dict()  # Shared data structure for logs and other shared variables
+    log_lock = Lock()  # Lock for log synchronization
+
+    # Initialize the log list in the shared data using the Manager instance
+    shared_data['log_list'] = manager.list()  # Create a shared log list using the Manager
+
+    # Ensure the log_list is created and set before passing it
+    if 'log_list' not in shared_data: shared_data['log_list'] = manager.list()
+    admin_helper = AdminHelper.AdminHelper(video_folder, output_folder, shared_data, log_lock)
+
     indices_to_remove = Settings.indices_to_remove
 
     remove1 = []
@@ -57,7 +69,7 @@ def process_folder(video_folder, output_folder):
         jobs = []
 
         for video_file in channel_files:
-            process_worker= ProcessVideo.process_worker
+            process_worker = ProcessVideo.process_worker
             p = multiprocessing.Process(target=process_worker, args=(semaphore, video_file, channel, admin_helper))
             jobs.append(p)
             p.start()
@@ -67,6 +79,5 @@ def process_folder(video_folder, output_folder):
 
         for video_file in channel_files:
             ProcessVideo.process_video(video_file, channel, admin_helper)
-
 
 

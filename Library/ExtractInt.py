@@ -60,7 +60,7 @@ def get_led_video(video, channel, admin_helper):
     led_video = False
     if led_file_exists:
         message = f"LED video exists: {base_name_led_output_file}"
-        admin_helper.write2logfile(message)
+        admin_helper.log(0, message)
         led_video = Video.Video(led_output_file)
         size = led_video.get_size()
         if size[0] == 0: led_file_exists = False
