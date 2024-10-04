@@ -56,16 +56,17 @@ def get_led_video(video, channel, admin_helper):
     led_output_file = os.path.join(led_output_folder, 'LED_' + basename + '.mp4')
     led_file_exists = os.path.isfile(led_output_file)
     box = get_box(video, admin_helper)
+    base_name_led_output_file = os.path.basename(led_output_file)
     led_video = False
     if led_file_exists:
-        message = f"LED video exists: {led_output_file}"
-        admin_helper.write(message)
+        message = f"LED video exists: {base_name_led_output_file}"
+        admin_helper.write2logfile(message)
         led_video = Video.Video(led_output_file)
         size = led_video.get_size()
         if size[0] == 0: led_file_exists = False
     if not led_file_exists:
-        message = f"Creating LED video: {led_output_file}"
-        admin_helper.write(message)
+        message = f"Creating LED video: {base_name_led_output_file}"
+        admin_helper.log(0, message)
         make_led_video(video, box, led_output_file)
         time.sleep(0.25)
         led_video = Video.Video(led_output_file)
@@ -73,17 +74,19 @@ def get_led_video(video, channel, admin_helper):
 
 
 def get_led_intensities(led_video, channel, admin_helper):
-    message = f"Getting intensities for: {led_video.filename}"
-    admin_helper.write(message)
+    base_name_led_output_file = os.path.basename(led_video.filename)
+    message = f"Getting intensities for: {base_name_led_output_file}"
+    admin_helper.log(0, message)
     basename = led_video.basename
     basename = basename.replace('LED_', '')
-    output_folder = admin_helper.get_output_folder()
     int_output_folder = admin_helper.get_folder(channel, 'int')
     int_output_file = os.path.join(int_output_folder, 'INT_' + basename + '.npz')
     capture = led_video.capture
     fps, total_number_of_frames = led_video.get_size()
     intensities = []
-    for i in tqdm(range(total_number_of_frames)):
+    #for i in tqdm(range(total_number_of_frames)):
+    for i in range(total_number_of_frames):
+        if i%100 == 0: print('int', led_video.basename, i, '/', total_number_of_frames)
         ret, frame = capture.read()
         mean = numpy.mean(frame)
         intensities.append(mean)
@@ -107,7 +110,9 @@ def make_led_video(video, bounding_box, output_file):
     size = (int(width), int(height))
     output = cv2.VideoWriter(output_file, fourcc, fps, size)
     previous_frame = None
-    for i in tqdm(range(total_number_of_frames)):
+    #for i in tqdm(range(total_number_of_frames)):
+    for i in range(total_number_of_frames):
+        if i%100 == 0: print('led', video.basename, i, '/', total_number_of_frames)
         ret, frame = capture.read()
         if frame is None: frame = previous_frame * 1
         cropped_frame = frame[y1:y2, x1:x2]
@@ -124,12 +129,12 @@ def get_box(video, admin_helper):
     if box_file_exists:
         box = Utils.load_from_pickle(box_file)
         message = f"Box loaded from: {box_file}"
-        admin_helper.write(message)
+        admin_helper.log(0, message)
     else:
         box = draw_box(video)
         Utils.save_to_pickle(box, box_file)
         message = f"Box saved to: {box_file}"
-        admin_helper.write(message)
+        admin_helper.log(0, message)
     return box
 
 

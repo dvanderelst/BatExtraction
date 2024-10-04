@@ -4,22 +4,26 @@ from Library import Utils
 import os.path as path
 import os
 
+
 class AdminHelper:
-    def __init__(self, output_folder):
+    def __init__(self, video_folder, output_folder):
+        self.video_files = Utils.get_video_files(video_folder)
+        self.processing_progress = video_files_to_dict(self.video_files)
         self.folders = create_output_folder_structure(output_folder, clear_existing=False)
-        self.log_file_name = path.join(output_folder, 'log.txt')
-        #self.log_file = open(self.log_file_name, 'w')
-        #self.log_file.write(time.asctime() + '\n')
-        #self.log_file.close()
+        self.log_file = path.join(output_folder, 'log.html')
+        self.log_list = []
 
-    def write(self, text):
-        #self.log_file = open(self.log_file_name, 'a')
-        #if type(text) == list: text = Utils.list_to_line(text)
-        #print(text)
-        #self.log_file.write(text + '\n')
-        #self.log_file.close()
-        pass
+    def log(self, level, message, write2file=False):
+        level_type = 'NONE'
+        if level == 0: level_type = 'INFO'
+        if level == 1: level_type = 'WARNING'
+        if level >= 2: level_type = 'ERROR'
+        asc_time = time.asctime()
+        self.log_list.append([asc_time, level_type, message])
+        if write2file: self.write2logfile([asc_time, level_type, message])
 
+    def write_log(self):
+        write_logs_to_html(self.log_list, self.log_file)
 
     def get_output_folder(self):
         return self.folders['output_folder']
@@ -30,6 +34,18 @@ class AdminHelper:
         elif tp == 'int':
             return self.folders['int_folders'][channel-1]
 
+
+def video_files_to_dict(video_files):
+    result = {}
+    channel = 1
+    for channel_files in video_files:
+        current_dict = {}
+        for file in channel_files:
+            base_name = path.basename(file)
+            current_dict[base_name] = [False, False]
+            result[channel] = current_dict
+        channel += 1
+    return result
 
 
 def create_output_folder_structure(main_folder, clear_existing=False):
@@ -69,4 +85,54 @@ def create_output_folder_structure(main_folder, clear_existing=False):
     result['led_folders'] = led_folders
     result['int_folders'] = int_folders
     return result
+
+
+def write_logs_to_html(logs, filename="log_output.html"):
+    html_content = """
+    <html>
+    <head>
+        <title>Log Output</title>
+        <style>
+            table {
+                width: 100%;
+                border-collapse: collapse;
+            }
+            th, td {
+                border: 1px solid black;
+                padding: 8px;
+                text-align: left;
+            }
+            th {
+                background-color: #f2f2f2;
+            }
+        </style>
+    </head>
+    <body>
+        <h2>Log Output</h2>
+        <table>
+            <tr>
+                <th>Timestamp</th>
+                <th>Level</th>
+                <th>Message</th>
+            </tr>
+    """
+
+    for log_item in logs:
+        asc_time, level_type, message = log_item
+        html_content += f"""
+            <tr>
+                <td>{asc_time}</td>
+                <td>{level_type}</td>
+                <td>{message}</td>
+            </tr>
+        """
+
+    html_content += """
+        </table>
+    </body>
+    </html>
+    """
+
+    with open(filename, 'w') as f:f.write(html_content)
+    print(f"Logs have been written to {filename}")
 

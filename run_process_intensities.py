@@ -27,7 +27,7 @@ output_folder = os.path.join(drive, output_folder)
 camera_folder = os.path.join(drive, video_folder)
 
 int_files_channels = Utils.get_int_files(output_folder)
-cam_files_channels = Utils.get_cam_files(camera_folder)
+cam_files_channels = Utils.get_video_files(camera_folder)
 channel = 1
 
 for channel_ints, channel_cams in zip(int_files_channels, cam_files_channels):

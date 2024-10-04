@@ -1,19 +1,10 @@
 ffmpeg_path = '/home/dieter/anaconda3/bin/ffmpeg'
 
 drive = "/media/dieter/Mmicrotis_search_Dieter"
-output_location = '/home/dieter/Desktop'
-
-video_folder = 'Mmicrotis_video/2024_01_30_3Ind_manuel'
-audio_folder = 'Mmicrotis_audio/2024_01_30_3Ind_manuel'
-
-output_folder = 'test_output'
-
 
 # These are the videofile indices not to be processed
-remove1 = [10,15]
-remove2 = []
-remove3 = []
-remove4 = []
+indices_to_remove = {}
+indices_to_remove['some_folder'] = [[],[],[],[]]
 
 # The thresholds for processing the intensities
 thresholds1 = [-100, 100, 20]

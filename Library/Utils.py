@@ -8,6 +8,7 @@ from scipy.io import loadmat
 from datetime import datetime
 from matplotlib import pyplot as plt
 from datetime import datetime, timedelta
+from Library import Settings
 
 
 
@@ -231,14 +232,16 @@ def get_movie_files(directory, extension='mkv'):
 
     return movie_files_full
 
-def get_cam_files(directory):
-    directory = os.path.abspath(directory)
-    files = os.listdir(directory)
+def get_video_files(video_folder):
+    drive = Settings.drive
+    video_folder = os.path.join(drive, video_folder)
+    video_folder = os.path.abspath(video_folder)
+    files = os.listdir(video_folder)
     mp4_files = [file for file in files if file.lower().endswith('.mp4')]
 
     mp4_files_full = []
     for mp4_file in mp4_files:
-        mp4_file_full = os.path.join(directory, mp4_file)
+        mp4_file_full = os.path.join(video_folder, mp4_file)
         mp4_files_full.append(mp4_file_full)
 
     file_names = split_files_by_channel(mp4_files_full)
