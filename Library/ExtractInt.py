@@ -3,12 +3,13 @@ import time
 
 import numpy
 import cv2
-from tqdm import tqdm
+
 from matplotlib import pyplot
 from matplotlib.widgets import RectangleSelector
-from datetime import datetime, timedelta
+from datetime import timedelta
 from Library import Video
 from Library import Utils
+
 
 
 def get_filename_for_index(intensity_index, intensity_data):
@@ -52,7 +53,7 @@ def load_intensities(filename):
 def get_led_video(video, channel, admin_helper):
     basename = video.basename
     output_folder = admin_helper.get_output_folder()
-    led_output_folder = admin_helper.get_folder(channel, 'led')
+    led_output_folder = admin_helper.get_result_folders(channel, 'led')
     led_output_file = os.path.join(led_output_folder, 'LED_' + basename + '.mp4')
     led_file_exists = os.path.isfile(led_output_file)
     box = get_box(video, admin_helper)
@@ -79,7 +80,7 @@ def get_led_intensities(led_video, channel, admin_helper):
     admin_helper.log(0, message)
     basename = led_video.basename
     basename = basename.replace('LED_', '')
-    int_output_folder = admin_helper.get_folder(channel, 'int')
+    int_output_folder = admin_helper.get_result_folders(channel, 'int')
     int_output_file = os.path.join(int_output_folder, 'INT_' + basename + '.npz')
     capture = led_video.capture
     fps, total_number_of_frames = led_video.get_size()
@@ -121,20 +122,20 @@ def make_led_video(video, bounding_box, output_file):
     output.release()
 
 
-def get_box(video, admin_helper):
-    output_folder = admin_helper.get_output_folder()
+def get_box(video, folder_manager):
     channel = video.channel
+    output_folder = folder_manager.get_output_folder()
     box_file = os.path.join(output_folder, 'box_channel_' + str(channel) + '.pck')
     box_file_exists = os.path.isfile(box_file)
     if box_file_exists:
         box = Utils.load_from_pickle(box_file)
         message = f"Box loaded from: {box_file}"
-        admin_helper.log(0, message)
+        folder_manager.log(0, message)
     else:
         box = draw_box(video)
         Utils.save_to_pickle(box, box_file)
         message = f"Box saved to: {box_file}"
-        admin_helper.log(0, message)
+        folder_manager.log(0, message)
     return box
 
 

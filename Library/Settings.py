@@ -1,6 +1,7 @@
 ffmpeg_path = '/home/dieter/anaconda3/bin/ffmpeg'
 
-drive = "/media/dieter/Mmicrotis_search_Dieter"
+input_drive = "/media/dieter/Mmicrotis_search_Dieter"
+output_drive = "/media/dieter/DataLinux/processed_video"
 
 # These are the videofile indices not to be processed
 indices_to_remove = {}

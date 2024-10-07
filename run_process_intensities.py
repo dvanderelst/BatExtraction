@@ -1,18 +1,15 @@
 import os
-import matplotlib
 import numpy
-
 from Library import ExtractInt
 from Library import Utils
 from Library import Settings
 from matplotlib import pyplot
 from Library import Signal
 
-#matplotlib.use('TkAgg')
 thresholds = {}
 
 # PARAMETERS
-drive = Settings.drive
+drive = Settings.input_drive
 video_folder = Settings.video_folder
 output_folder = Settings.output_folder
 

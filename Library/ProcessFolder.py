@@ -1,27 +1,24 @@
-import multiprocessing
 from Library import Video
 from Library import Utils
 from Library import ExtractInt
-from Library import AdminHelper
 from Library import Settings
 from Library import ProcessVideo
-from multiprocessing import Semaphore, Manager, Lock
+import multiprocessing
 
-def process_folder(video_folder, output_folder):
-    # Create a Manager instance
-    manager = Manager()
+from pyBat import PushOver
 
-    # Create shared data and lock using the Manager instance
-    shared_data = manager.dict()  # Shared data structure for logs and other shared variables
-    log_lock = Lock()  # Lock for log synchronization
+def process_videos_in_parallel(channel_files, channel, folder_manager):
+    # Create a pool of worker processes
+    pool = multiprocessing.Pool(processes=4)
+    # Prepare arguments to pass to the process_video function
+    args = [(video_file, channel, folder_manager) for video_file in channel_files]
+    # Use pool.starmap to execute the process_video function in parallel
+    pool.starmap(ProcessVideo.process_video, args)
+    # Close the pool and wait for all tasks to complete
+    pool.close()
+    pool.join()
 
-    # Initialize the log list in the shared data using the Manager instance
-    shared_data['log_list'] = manager.list()  # Create a shared log list using the Manager
-
-    # Ensure the log_list is created and set before passing it
-    if 'log_list' not in shared_data: shared_data['log_list'] = manager.list()
-    admin_helper = AdminHelper.AdminHelper(video_folder, output_folder, shared_data, log_lock)
-
+def process_folder(video_folder, folder_manager, boxes_only=False):
     indices_to_remove = Settings.indices_to_remove
 
     remove1 = []
@@ -34,6 +31,8 @@ def process_folder(video_folder, output_folder):
         remove2 = indices_to_remove[video_folder][1]
         remove3 = indices_to_remove[video_folder][2]
         remove4 = indices_to_remove[video_folder][3]
+
+    output_folder = folder_manager.get_output_folder()
 
     files = Utils.get_video_files(video_folder)
     # Plot the durations of the all video files and save the image
@@ -51,33 +50,24 @@ def process_folder(video_folder, output_folder):
     first_video_channel2 = Video.Video(files[2][0])
     first_video_channel3 = Video.Video(files[3][0])
 
-    ExtractInt.get_box(first_video_channel0, admin_helper)
-    ExtractInt.get_box(first_video_channel1, admin_helper)
-    ExtractInt.get_box(first_video_channel2, admin_helper)
-    ExtractInt.get_box(first_video_channel3, admin_helper)
+    ExtractInt.get_box(first_video_channel0, folder_manager)
+    ExtractInt.get_box(first_video_channel1, folder_manager)
+    ExtractInt.get_box(first_video_channel2, folder_manager)
+    ExtractInt.get_box(first_video_channel3, folder_manager)
 
-    admin_helper.log(0, 'Processing video files')
+    if boxes_only: return
+
+    folder_manager.log(0, 'Processing video files')
 
     for channel in [1, 2, 3, 4]:
         if channel == 1: channel_files = files[0]
         if channel == 2: channel_files = files[1]
         if channel == 3: channel_files = files[2]
         if channel == 4: channel_files = files[3]
+        process_videos_in_parallel(channel_files, channel, folder_manager)
 
-        max_processes = 8
-        semaphore = Semaphore(max_processes)
-        jobs = []
+        pushover_msg = f"{video_folder}, Channel {channel} done"
+        PushOver.send(pushover_msg)
 
-        for video_file in channel_files:
-            process_worker = ProcessVideo.process_worker
-            p = multiprocessing.Process(target=process_worker, args=(semaphore, video_file, channel, admin_helper))
-            jobs.append(p)
-            p.start()
-
-        for job in jobs:
-            job.join()
-
-        for video_file in channel_files:
-            ProcessVideo.process_video(video_file, channel, admin_helper)
 
 

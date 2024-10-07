@@ -14,7 +14,7 @@ def match_audio(audio_file, write_video=True):
     audio_file_basename = Utils.get_basename(audio_file)
     print('Audio file basename:', audio_file_basename)
 
-    drive = Settings.drive
+    drive = Settings.input_drive
     output_folder = Settings.output_folder
     output_folder = os.path.join(drive, output_folder)
     result_folder = Settings.result_folder

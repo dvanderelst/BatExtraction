@@ -1,14 +1,13 @@
 import os
 import pickle
 import re
-import shutil
 import time
 import natsort
 from scipy.io import loadmat
-from datetime import datetime
 from matplotlib import pyplot as plt
 from datetime import datetime, timedelta
 from Library import Settings
+import shutil
 
 
 
@@ -233,7 +232,7 @@ def get_movie_files(directory, extension='mkv'):
     return movie_files_full
 
 def get_video_files(video_folder):
-    drive = Settings.drive
+    drive = Settings.input_drive
     video_folder = os.path.join(drive, video_folder)
     video_folder = os.path.abspath(video_folder)
     files = os.listdir(video_folder)
@@ -261,3 +260,22 @@ def split_files_by_channel(file_names):
 
     file_names = [ch1, ch2, ch3, ch4]
     return file_names
+
+
+def empty_folder(folder_path):
+    # Check if the folder exists
+    if os.path.exists(folder_path):
+        # Loop through all the contents of the folder
+        for filename in os.listdir(folder_path):
+            file_path = os.path.join(folder_path, filename)
+
+            # Check if it's a file or a directory
+            if os.path.isfile(file_path) or os.path.islink(file_path):
+                # Remove the file or symlink
+                os.remove(file_path)
+            elif os.path.isdir(file_path):
+                # Remove the directory and its contents
+                shutil.rmtree(file_path)
+        print(f"All contents of the folder '{folder_path}' have been removed.")
+    else:
+        print(f"The folder '{folder_path}' does not exist.")
