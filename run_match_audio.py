@@ -6,7 +6,7 @@ import os
 
 write_video = True
 audio_folder = Settings.audio_folder
-drive = Settings.drive
+drive = Settings.input_drive
 audio_folder = os.path.join(drive, audio_folder)
 
 selected_runs = [9, 10, 19]

@@ -1,13 +1,14 @@
 import os
 import pickle
 import re
-import shutil
 import time
 import natsort
 from scipy.io import loadmat
-from datetime import datetime
 from matplotlib import pyplot as plt
 from datetime import datetime, timedelta
+from Library import Settings
+import shutil
+
 
 
 def print_dict_fields(dictionary, output_file=None):
@@ -52,7 +53,7 @@ def purge_cam_files(cam_files, remove1=[], remove2=[], remove3=[], remove4=[]):
     return new, removed
 
 
-def visualize_cam_file_durations(cam_files, output_folder, prefix=''):
+def visualize_cam_file_durations(cam_files, output_folder, prefix='', show=False):
     one_minute = timedelta(minutes=1)
     longest = longest_list_length(cam_files)
     min_start_time, max_end_time = get_min_max_times(cam_files)
@@ -68,9 +69,10 @@ def visualize_cam_file_durations(cam_files, output_folder, prefix=''):
         plt.title(channel)
         channel = channel + 1
     output_file = os.path.join(output_folder, prefix + 'timing.png')
-    plt.savefig(output_file)
     plt.tight_layout()
-    plt.show()
+    plt.savefig(output_file)
+    if show: plt.show()
+    if not show: plt.close()
 
 
 def longest_list_length(list_of_lists):
@@ -191,16 +193,6 @@ def load_from_pickle(file_path):
         #print(f"Error loading object from pickle file: {e}")
         return None
 
-
-def create_empty_folder(folder_path, clear_existing=False):
-    try:
-        if os.path.exists(folder_path) and clear_existing:
-            shutil.rmtree(folder_path)
-        os.makedirs(folder_path, exist_ok=True)
-    except Exception as e:
-        print(f"Error creating empty folder: {e}")
-
-
 def get_mat_files(directory, runs=None):
     mat_files = []
     for file in os.listdir(directory):
@@ -239,14 +231,16 @@ def get_movie_files(directory, extension='mkv'):
 
     return movie_files_full
 
-def get_cam_files(directory):
-    directory = os.path.abspath(directory)
-    files = os.listdir(directory)
+def get_video_files(video_folder):
+    drive = Settings.input_drive
+    video_folder = os.path.join(drive, video_folder)
+    video_folder = os.path.abspath(video_folder)
+    files = os.listdir(video_folder)
     mp4_files = [file for file in files if file.lower().endswith('.mp4')]
 
     mp4_files_full = []
     for mp4_file in mp4_files:
-        mp4_file_full = os.path.join(directory, mp4_file)
+        mp4_file_full = os.path.join(video_folder, mp4_file)
         mp4_files_full.append(mp4_file_full)
 
     file_names = split_files_by_channel(mp4_files_full)
@@ -266,3 +260,22 @@ def split_files_by_channel(file_names):
 
     file_names = [ch1, ch2, ch3, ch4]
     return file_names
+
+
+def empty_folder(folder_path):
+    # Check if the folder exists
+    if os.path.exists(folder_path):
+        # Loop through all the contents of the folder
+        for filename in os.listdir(folder_path):
+            file_path = os.path.join(folder_path, filename)
+
+            # Check if it's a file or a directory
+            if os.path.isfile(file_path) or os.path.islink(file_path):
+                # Remove the file or symlink
+                os.remove(file_path)
+            elif os.path.isdir(file_path):
+                # Remove the directory and its contents
+                shutil.rmtree(file_path)
+        print(f"All contents of the folder '{folder_path}' have been removed.")
+    else:
+        print(f"The folder '{folder_path}' does not exist.")

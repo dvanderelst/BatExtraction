@@ -1,18 +1,15 @@
 import os
-import matplotlib
 import numpy
-
 from Library import ExtractInt
 from Library import Utils
 from Library import Settings
 from matplotlib import pyplot
 from Library import Signal
 
-#matplotlib.use('TkAgg')
 thresholds = {}
 
 # PARAMETERS
-drive = Settings.drive
+drive = Settings.input_drive
 video_folder = Settings.video_folder
 output_folder = Settings.output_folder
 
@@ -27,7 +24,7 @@ output_folder = os.path.join(drive, output_folder)
 camera_folder = os.path.join(drive, video_folder)
 
 int_files_channels = Utils.get_int_files(output_folder)
-cam_files_channels = Utils.get_cam_files(camera_folder)
+cam_files_channels = Utils.get_video_files(camera_folder)
 channel = 1
 
 for channel_ints, channel_cams in zip(int_files_channels, cam_files_channels):
