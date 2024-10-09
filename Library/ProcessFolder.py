@@ -4,10 +4,15 @@ from Library import ExtractInt
 from Library import Settings
 from Library import ProcessVideo
 import multiprocessing
-
+import matplotlib
 from pyBat import PushOver
 
+def process_videos_in_series(channel_files, channel, folder_manager):
+    for video_file in channel_files:
+        ProcessVideo.process_video(video_file, channel, folder_manager)
+
 def process_videos_in_parallel(channel_files, channel, folder_manager):
+    matplotlib.use('Agg')
     # Create a pool of worker processes
     pool = multiprocessing.Pool(processes=4)
     # Prepare arguments to pass to the process_video function
@@ -18,7 +23,8 @@ def process_videos_in_parallel(channel_files, channel, folder_manager):
     pool.close()
     pool.join()
 
-def process_folder(video_folder, folder_manager, boxes_only=False):
+def process_folder(folder_manager, boxes_only=False):
+    video_folder = folder_manager.get_video_folder()
     indices_to_remove = Settings.indices_to_remove
 
     remove1 = []
@@ -34,7 +40,7 @@ def process_folder(video_folder, folder_manager, boxes_only=False):
 
     output_folder = folder_manager.get_output_folder()
 
-    files = Utils.get_video_files(video_folder)
+    files = Utils.get_video_files(folder_manager)
     # Plot the durations of the all video files and save the image
     Utils.visualize_cam_file_durations(files, output_folder)
     # Remove video files (in case we have files that overlap with others in time)
@@ -65,7 +71,7 @@ def process_folder(video_folder, folder_manager, boxes_only=False):
         if channel == 3: channel_files = files[2]
         if channel == 4: channel_files = files[3]
         process_videos_in_parallel(channel_files, channel, folder_manager)
-
+        #process_videos_in_series(channel_files, channel, folder_manager)
         pushover_msg = f"{video_folder}, Channel {channel} done"
         PushOver.send(pushover_msg)
 

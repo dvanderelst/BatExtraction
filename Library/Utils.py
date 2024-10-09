@@ -203,19 +203,38 @@ def get_mat_files(directory, runs=None):
     return mat_files
 
 
-def get_int_files(directory):
-    int_files = []
-    files = os.listdir(directory)
-    for file in files:
-        if file.startswith('INT'): int_files.append(file)
+def get_led_files(folder_manger):
+    all_int_files = []
+    folders = folder_manger.folders['led_folders']
+    for folder in folders:
+        channel_files = []
+        if os.path.isdir(folder):
+            for filename in os.listdir(folder):
+                if filename.startswith("LED"):
+                    full_path = os.path.join(folder, filename)
+                    channel_files.append(full_path)
+            channel_files = natsort.natsorted(channel_files)
+            all_int_files.append(channel_files)
+        else:
+            print(f"Folder does not exist: {folder}")
+    return all_int_files
 
-    int_files_full = []
-    for int_file in int_files:
-        int_file_full = os.path.join(directory, int_file)
-        int_files_full.append(int_file_full)
 
-    file_names = split_files_by_channel(int_files_full)
-    return file_names
+def get_int_files(folder_manger):
+    all_int_files = []
+    folders = folder_manger.folders['int_folders']
+    for folder in folders:
+        channel_files = []
+        if os.path.isdir(folder):
+            for filename in os.listdir(folder):
+                if filename.startswith("INT"):
+                    full_path = os.path.join(folder, filename)
+                    channel_files.append(full_path)
+            channel_files = natsort.natsorted(channel_files)
+            all_int_files.append(channel_files)
+        else:
+            print(f"Folder does not exist: {folder}")
+    return all_int_files
 
 
 def get_movie_files(directory, extension='mkv'):
@@ -231,7 +250,8 @@ def get_movie_files(directory, extension='mkv'):
 
     return movie_files_full
 
-def get_video_files(video_folder):
+def get_video_files(folder_manager):
+    video_folder = folder_manager.get_video_folder()
     drive = Settings.input_drive
     video_folder = os.path.join(drive, video_folder)
     video_folder = os.path.abspath(video_folder)

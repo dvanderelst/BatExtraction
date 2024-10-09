@@ -8,7 +8,7 @@ indices_to_remove = {}
 indices_to_remove['some_folder'] = [[],[],[],[]]
 
 # The thresholds for processing the intensities
-thresholds1 = [-100, 100, 20]
-thresholds2 = [-100, 100, 10]
-thresholds3 = [-100, 100, 20]
-thresholds4 = [-100, 100, 10]
+thresholds1 = [-150, 150, 2]
+thresholds2 = [-150, 150, 2]
+thresholds3 = [-150, 150, 2]
+thresholds4 = [-150, 150, 2]
