@@ -9,9 +9,9 @@ from Library import Utils
 from Library import Settings
 from Library import Signal
 
-video_folder = 'Mmicrotis_video/2024_03_17_Ind05'
+video_folder = 'Mmicrotis_video/2024_03_17_Ind03'
 
-create_plots = False
+create_plots = True
 
 thresholds = {}
 thresholds[1] = Settings.thresholds1

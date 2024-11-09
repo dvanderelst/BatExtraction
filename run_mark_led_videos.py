@@ -5,7 +5,7 @@ from Library import FolderManager
 from Library import Utils
 from Library import MarkVideo
 
-video_folder = 'Mmicrotis_video/2024_03_17_Ind05'
+video_folder = 'Mmicrotis_video/2024_03_17_Ind03'
 folder_manager = FolderManager.FolderManager(video_folder, empty_log_folder=False)
 
 pyplot.close('all')
