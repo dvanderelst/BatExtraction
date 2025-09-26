@@ -25,7 +25,7 @@ def get_filename_for_index(intensity_index, intensity_data):
     return None, None
 
 
-def concatenate_intensities(file_list, processed=True):
+def concatenate_intensities(file_list):
     trace_list = []
     file_start_indices = []
     total_length = 0
@@ -52,7 +52,6 @@ def load_intensities(filename):
 
 def get_led_video(video, channel, admin_helper):
     basename = video.basename
-    output_folder = admin_helper.get_output_folder()
     led_output_folder = admin_helper.get_result_folders(channel, 'led')
     led_output_file = os.path.join(led_output_folder, 'LED_' + basename + '.mp4')
     led_file_exists = os.path.isfile(led_output_file)
@@ -74,6 +73,29 @@ def get_led_video(video, channel, admin_helper):
     return led_video
 
 
+def get_pixel_variation(video, n=25000):
+    video_file = video.filename
+    cap = cv2.VideoCapture(video_file)
+    frame_count = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
+    frame_width = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
+    frame_height = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
+    if n > frame_count:
+        print(f"Warning: The video contains only {frame_count} frames. Processing all available frames.")
+        n = frame_count
+    pixel_values = numpy.zeros((n, frame_height, frame_width), dtype=numpy.float32)
+    frame_idx = 0
+    while frame_idx < n:
+        ret, frame = cap.read()
+        if not ret:
+            break
+        gray_frame = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+        pixel_values[frame_idx] = gray_frame
+        frame_idx += 1
+    cap.release()
+    pixel_variation = numpy.std(pixel_values, axis=0)
+    return pixel_variation
+
+
 def get_led_intensities(led_video, channel, admin_helper):
     base_name_led_output_file = os.path.basename(led_video.filename)
     message = f"Getting intensities for: {base_name_led_output_file}"
@@ -82,14 +104,23 @@ def get_led_intensities(led_video, channel, admin_helper):
     basename = basename.replace('LED_', '')
     int_output_folder = admin_helper.get_result_folders(channel, 'int')
     int_output_file = os.path.join(int_output_folder, 'INT_' + basename + '.npz')
+    msk_output_file = os.path.join(int_output_folder, 'MSK_' + basename + '.png')
     capture = led_video.capture
     fps, total_number_of_frames = led_video.get_size()
     intensities = []
-    #for i in tqdm(range(total_number_of_frames)):
+    mask = get_pixel_variation(led_video, n=25)
+    bin_mask = mask > (numpy.max(mask) * 0.75)
+    pyplot.figure()
+    pyplot.subplot(1, 2, 1)
+    pyplot.imshow(mask)
+    pyplot.subplot(1, 2, 2)
+    pyplot.imshow(bin_mask)
+    pyplot.savefig(msk_output_file)
+    pyplot.close()
     for i in range(total_number_of_frames):
         if i%100 == 0: print('int', led_video.basename, i, '/', total_number_of_frames)
         ret, frame = capture.read()
-        mean = numpy.mean(frame)
+        mean = numpy.mean(frame[bin_mask])
         intensities.append(mean)
     intensities = numpy.array(intensities)
     save_intensities(intensities, fps, int_output_file)

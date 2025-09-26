@@ -1,8 +1,5 @@
 import time
 import uuid
-
-from h2.settings import Settings
-
 from Library import Utils
 from Library import Settings
 import os.path as path
@@ -11,12 +8,17 @@ import ast
 
 
 class FolderManager:
-    def __init__(self, video_folder, output_folder):
+    def __init__(self, video_folder, empty_log_folder=True):
+        self.video_folder = video_folder
+        self.base_output_folder = path.split(video_folder)[1]
         self.output_drive = Settings.output_drive
-        self.video_files = Utils.get_video_files(video_folder)
-        self.folders = create_output_folder_structure(output_folder, True)
-        self.log_file = path.join(self.output_drive, output_folder, 'log.html')
-        Utils.empty_folder(self.folders['log_folder'])
+        self.video_files = Utils.get_video_files(self)
+        self.folders = create_output_folder_structure(self.base_output_folder, True)
+        self.log_file = path.join(self.output_drive, self.base_output_folder, 'log.html')
+        if empty_log_folder: Utils.empty_folder(self.folders['log_folder'])
+
+    def get_video_folder(self):
+        return self.video_folder
 
     def get_log_file(self):
         log_folder = self.get_log_folder()
@@ -61,36 +63,29 @@ class FolderManager:
     def get_output_folder(self):
         return self.folders['output_folder']
 
+    def get_base_output_folder(self):
+        return self.folders['base_output_folder']
+
     def get_result_folders(self, channel, tp):
         if tp == 'led':
             return self.folders['led_folders'][channel-1]
         elif tp == 'int':
             return self.folders['int_folders'][channel-1]
 
-
-def create_progress_files(file_list, folder_path):
-    new_extension = ".progress"
-    progress_files = {}
-    # Loop through each sublist in the list of lists
-    for sublist in file_list:
-        for full_path in sublist:
-            # Extract the basename from the full path (without extension)
-            base_name = os.path.basename(full_path)
-            base_name_without_ext = os.path.splitext(base_name)[0]
-            # Create the new filename with the specified extension
-            new_file_name = f"{base_name_without_ext}{new_extension}"
-            # Create the full path for the file in the target folder
-            file_path = os.path.join(folder_path, new_file_name)
-            # Write 'False\nFalse' to the file
-            with open(file_path, 'w') as file: file.write('False\nFalse')
-            progress_files[base_name] = file_path
-    return progress_files
+    def print_contents(self):
+        print('Base output folder:', self.get_base_output_folder())
+        print('Output folder:', self.get_output_folder())
+        print('LED folders:')
+        for folder in self.folders['led_folders']: print(folder)
+        print('Intensity folders:')
+        for folder in self.folders['int_folders']: print(folder)
+        print('Log folder:', self.get_log_folder())
 
 
-def create_output_folder_structure(main_folder, make=False):
+def create_output_folder_structure(base_output_folder, make=False):
 
     output_drive = Settings.output_drive
-    output_folder = path.join(output_drive, main_folder)
+    output_folder = path.join(output_drive, base_output_folder)
 
     led_channel_1_folder = path.join(output_folder, 'led_channel_1')
     led_channel_2_folder = path.join(output_folder, 'led_channel_2')
@@ -123,6 +118,7 @@ def create_output_folder_structure(main_folder, make=False):
         os.makedirs(log_folder, exist_ok=True)
 
     result = {}
+    result['base_output_folder'] = base_output_folder
     result['output_folder'] = output_folder
     result['led_folders'] = led_folders
     result['int_folders'] = int_folders
