@@ -9,7 +9,7 @@ from Library import Utils
 from Library import Settings
 from Library import Signal
 
-video_folder = 'Mmicrotis_video/2024_03_17_Ind03'
+video_folder = 'Mmicrotis_video/2024_04_15_Ind04'
 
 create_plots = True
 

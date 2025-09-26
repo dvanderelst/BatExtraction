@@ -1,9 +1,18 @@
 from scipy.signal import butter, filtfilt
-import numpy as np
-from scipy.signal import butter, filtfilt
 from scipy.signal import spectrogram
 from matplotlib import pyplot as plt
+from scipy.io.wavfile import write
+import numpy as np
 
+def save_to_wav(array, sample_rate, filename):
+    if array.dtype not in [np.int16, np.int32, np.float32]:
+        # Normalize if it's a float array in the range [-1, 1]
+        if np.issubdtype(array.dtype, np.floating):
+            array = (array * 32767).astype(np.int16)
+        else:
+            raise ValueError("Array must be of type int16, int32, or float32")
+    write(filename, sample_rate, array)
+    print(f"WAV file saved as '{filename}'")
 
 def boxcar(data, window_size):
     padded_data = np.pad(data, (window_size // 2,), mode='reflect')
@@ -23,7 +32,7 @@ def bandpass_filter(data, lowcut, highcut):
     return filtered_data
 
 
-def compute_spectrogram(signal, nfft=64, noverlap=None, plot=False, cmap='viridis'):
+def compute_spectrogram(signal, nfft=64, noverlap=None, plot=False, cmap='gray'):
     frequencies, times, Sxx = spectrogram(
         signal,
         fs=400000,  # Sampling frequency
@@ -50,4 +59,4 @@ def compute_spectrogram(signal, nfft=64, noverlap=None, plot=False, cmap='viridi
         plt.title('Spectrogram')
         plt.show()
 
-    return frequencies, times_ms, Sxx
+    return frequencies_khz, times_ms, Sxx

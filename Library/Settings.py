@@ -1,4 +1,11 @@
-ffmpeg_path = '/home/dieter/anaconda3/bin/ffmpeg'
+import shutil
+
+ffmpeg_path = shutil.which("ffmpeg")
+if ffmpeg_path is None:
+    raise RuntimeError("ffmpeg is not installed or not on PATH")
+print("Using ffmpeg at:", ffmpeg_path)
+
+#ffmpeg_path = '/home/dieter/anaconda3/bin/ffmpeg'
 
 input_drive = "/media/dieter/Mmicrotis_search_Dieter"
 output_drive = "/media/dieter/DataLinux/processed_video"
